@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import httpx
 import pytest
-from conftest import fixture_html, fixture_text, load_script
+from conftest import fixture_html, fixture_text, load_script, use_mock_transport
 
 from enabiz_mcp.config import Config
 from enabiz_mcp.mhrs import discovery
@@ -142,7 +142,7 @@ def test_bundle_client_refuses_api_path():
     """Bundle client'ı `/api/`'ye gitmeyi REDDEDER — yorum değil, invaryant."""
     cfg = Config(tc_kimlik_no=None, sifre=None, session_path=None, min_interval=0.0)
     c = bundle_client(cfg)
-    c._transport = httpx.MockTransport(_handler)
+    use_mock_transport(c, _handler)
     with pytest.raises(ApiBoundaryViolation):
         c.get("/api/vatandas/dil")
 

@@ -15,7 +15,7 @@
 | Endpoint | Method | Params | Auth | Yanıt | Durum |
 |---|---|---|---|---|---|
 | `/Account/Login` | GET | — | public | HTML (antiforgery token + cookie) | doğrulandı |
-| `/Account/GetSmsOnayKontrol` | POST | `TCKimlikNo`, `Sifre` | xsrf | `22`=OK→SMS · `87`=hata | **doğrulandı** |
+| `/Account/GetSmsOnayKontrol` | POST | `TCKimlikNo`, `Sifre` | xsrf | `22`=OK→SMS · `87`=hata · `77`=**anlamı bilinmiyor** (2026-08-31 canlı) | **doğrulandı** (kod listesi eksik) |
 | `/Account/GetSmsOnayGirisYap` | POST | `tc`, `onayKodu` | xsrf | `1`=giriş OK (`.EnabizSESSIONID`) · `2`=kod yanlış | **doğrulandı** |
 | `/Account/Logout` · `/Account/LogoutWebSessions` | GET | — | session | çıkış | keşfedildi |
 | `/Account/SmsGonderimKontrol` · `/Account/SMSOnayi` | POST | (ayrı telefon/şifre-SMS akışı, login değil) | xsrf | — | keşfedildi |

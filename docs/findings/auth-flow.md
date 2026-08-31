@@ -70,12 +70,37 @@ Standart ASP.NET Core "cookie + gizli alan çift-gönderim" deseni.
 
 | Adım | Endpoint | Method | Params | Yanıt kodları |
 |---|---|---|---|---|
-| 1 | `/Account/GetSmsOnayKontrol` | POST | `TCKimlikNo`, `Sifre` | `22`=kimlik OK→SMS onayına geç · `87`=işlem hatası |
+| 1 | `/Account/GetSmsOnayKontrol` | POST | `TCKimlikNo`, `Sifre` | `22`=kimlik OK→SMS onayına geç · `87`=işlem hatası · `77`=? (aşağıya bak) |
 | 2 | `/Account/GetSmsOnayGirisYap` | POST | `tc`, `onayKodu` | `1`=giriş başarılı (`location.href="/"`) · `2`=kod eşleşmiyor · diğer→`/Account` |
 
 - **Adım 1** canlı test edildi → `200 application/json`, gövde `22`. Kimlik bilgileri
   doğru; SMS sunucu tarafından bu adımda gönderiliyor (ayrı bir "gönder" çağrısı yok).
 - **Auth cookie** adım 2'nin `1` yanıtıyla set ediliyor (JS ardından `/`'a yönlendiriyor).
+
+### Bilinmeyen yanıt kodları — `77` (AÇIK, 2026-08-31)
+
+Canlı `login_start` çağrısı `GetSmsOnayKontrol`'den **`77`** aldı:
+
+```
+HTTP 200 · content-type: application/json; charset=utf-8 · gövde: 77 · Set-Cookie: yok
+```
+
+Yani XSRF zinciri SAĞLAM (token kazındı, POST kabul edildi, JSON döndü) — kırılan şey
+**kod eşlemesi**: istemci yalnız `22`/`87` tanıyordu, `77` `step="unknown"`a düştü ve
+giriş ilerlemedi. Kodun anlamı **BİLİNMİYOR**.
+
+**Anlamı tahminle eklenmez** (CLAUDE.md #2): `77`'yi "şifre yanlış" ya da "hesap
+kilitli" diye eşlemek, kullanıcıya yanlış nedeni gösterip yanlış düzeltmeye
+yönlendirirdi. Bunun yerine `login_start` ham kodu `code` alanında ve ne yapılacağını
+`hint` alanında olduğu gibi taşır; regresyon `tests/test_login_flow.py`de kilitli.
+
+Anlamını öğrenmenin tek güvenilir yolu: **aynı kimlik bilgileriyle tarayıcıdan
+enabiz.gov.tr'ye girip portalın gösterdiği mesajı okumak** (ve login sayfasının
+JS'indeki `GetSmsOnayKontrol` `success` handler'ında `77` karşılaştırmasını aramak).
+Muhtemel aday durumlar — hiçbiri doğrulanmadı: şifre süresi dolmuş / zorunlu şifre
+değişimi, hesap kilidi, onay bekleyen sözleşme-KVKK adımı, telefon doğrulaması.
+
+> Aday listesi **kanıt değildir**; koda ancak canlı gözlemle girer.
 
 ### ⚠️ Ayrı akış — bu login DEĞİL
 `SmsGonderimKontrol` ({ceptelefonu}) ve `SMSOnayi` ({tc, cep}) → telefon-doğrulama/
@@ -103,7 +128,12 @@ Betikle giriş herhangi bir adımda reCAPTCHA/anti-otomasyona takılırsa: kulla
 tarayıcıda normal giriş yapar, kimlikli cookie(ler) MCP'ye aktarılır (env/dosya),
 MCP yalnızca salt-okunur veri çağrılarında bu oturumu + XSRF'i kullanır.
 
-## Açık sorular (Faz 1)
+## Açık sorular
+
+- [ ] **`77` ne demek?** (2026-08-31 canlı gözlem — yukarıda). Kod eşlemesi eksik;
+      giriş bu yüzden ilerlemiyor. Cevap tarayıcıdaki mesajdan/login JS'inden gelir.
+
+### Faz 1'den kalanlar
 - [ ] `GetSmsOnayKontrol` yanıt şekli nedir? (JSON? SMS gerekli/gereksiz ayrımı?)
 - [ ] SMS'i hangi endpoint tetikliyor, hangi parametrelerle?
 - [ ] `SMSOnayi` başarılı yanıtı ve set edilen auth cookie adı?

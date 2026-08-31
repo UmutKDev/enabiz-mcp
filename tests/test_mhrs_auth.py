@@ -14,6 +14,7 @@ import time
 
 import httpx
 import pytest
+from conftest import use_mock_transport
 
 from enabiz_mcp import auth as enabiz_auth
 from enabiz_mcp.config import Config
@@ -69,23 +70,21 @@ def _error(kodu: str, mesaj: str = "hata") -> dict:
 def test_readonly_client_refuses_write_endpoints(tmp_path, method, path):
     """Varsayılan client yazma ucuna GİDEMEZ — istek ağa hiç çıkmaz."""
     c = api_client(_cfg(tmp_path), "jwt")
-    c._transport = httpx.MockTransport(
-        lambda r: pytest.fail(f"yazma ucuna istek gitti: {r.url}")  # noqa: ARG005
-    )
+    use_mock_transport(c, lambda r: pytest.fail(f"yazma ucuna istek gitti: {r.url}"))  # noqa: ARG005
     with pytest.raises(WriteNotAllowed):
         c.request(method, path)
 
 
 def test_readonly_client_allows_read_endpoints(tmp_path):
     c = api_client(_cfg(tmp_path), "jwt")
-    c._transport = httpx.MockTransport(lambda r: httpx.Response(200, json=_envelope({"ok": 1})))
+    use_mock_transport(c, lambda r: httpx.Response(200, json=_envelope({"ok": 1})))
     assert c.get("kurum/randevu/yaklasan-randevularim").status_code == 200
 
 
 def test_allow_write_opens_the_gate(tmp_path):
     """Kapı yasak değil, NİYET beyanı — randevu tool'ları bunu açıkça geçer."""
     c = api_client(_cfg(tmp_path), "jwt", allow_write=True)
-    c._transport = httpx.MockTransport(lambda r: httpx.Response(200, json=_envelope({"hrn": "X"})))
+    use_mock_transport(c, lambda r: httpx.Response(200, json=_envelope({"hrn": "X"})))
     assert c.post("kurum/randevu/randevu-ekle", json={}).status_code == 200
 
 
@@ -97,7 +96,7 @@ def test_api_client_sends_bearer(tmp_path):
         return httpx.Response(200, json=_envelope({}))
 
     c = api_client(_cfg(tmp_path), "TOK123")
-    c._transport = httpx.MockTransport(handler)
+    use_mock_transport(c, handler)
     c.get("vatandas/dil")
     assert captured["auth"] == "Bearer TOK123"
 
@@ -374,9 +373,7 @@ def test_exchange_for_jwt_sends_correct_body(tmp_path, monkeypatch):
     real = mhrs_client.anon_api_client
 
     def fake(cfg):
-        c = real(cfg)
-        c._transport = httpx.MockTransport(handler)
-        return c
+        return use_mock_transport(real(cfg), handler)
 
     monkeypatch.setattr(mhrs_client, "anon_api_client", fake)
 

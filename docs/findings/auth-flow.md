@@ -123,10 +123,32 @@ değişimi, hesap kilidi, onay bekleyen sözleşme-KVKK adımı, telefon doğrul
 - Not: antiforgery cookie kısa ömürlü olabilir (portal doküman notu ~8 dk); auth
   cookie'si ayrı ve daha uzun ömürlüdür — ikisi karıştırılmamalı.
 
-## Yedek yol — oturum içe aktarma
-Betikle giriş herhangi bir adımda reCAPTCHA/anti-otomasyona takılırsa: kullanıcı
-tarayıcıda normal giriş yapar, kimlikli cookie(ler) MCP'ye aktarılır (env/dosya),
-MCP yalnızca salt-okunur veri çağrılarında bu oturumu + XSRF'i kullanır.
+## Yedek yol — oturum içe aktarma (UYGULANDI)
+
+Betikle giriş herhangi bir adımda reCAPTCHA/anti-otomasyona **ya da tanınmayan bir akış
+koduna** (`77`, yukarıda) takılırsa: kullanıcı tarayıcıda normal giriş yapar, kimlikli
+cookie MCP'ye aktarılır, MCP yalnızca salt-okunur veri çağrılarında bu oturumu + XSRF'i
+kullanır.
+
+Uygulama: `src/enabiz_mcp/import_session.py`, konsol komutu `enabiz-import-session`
+(`uvx --from enabiz-mcp enabiz-import-session`).
+
+**Neden MCP tool'u DEĞİL, neden env değişkeni DEĞİL.** `.EnabizSESSIONID` bir
+bearer'dır: onu tutan kullanıcının kendisidir. Tool argümanı yapmak sırrı LLM bağlamına,
+env değişkeni yapmak diskte duran istemci yapılandırmasına yazardı — ikisi de invaryant
+#3'ü ihlal eder. Bu yüzden değer `getpass` ile alınır (ekrana basılmaz, `argv`'ye ve
+kabuk geçmişine düşmez). Aynı gerekçe `mhrs/auth.py`'de MHRS JWT'si için de yazılı;
+`scripts/discover.py`'nin OTP'yi `getpass` ile alması da aynı desendir.
+
+**Önce doğrula, sonra kaydet.** `auth.cookies_alive()` cookie'leri kaydetmeden canlı bir
+GET ile sınar. Sıra ters olsaydı tek bir yanlış yapıştırma çalışan oturum dosyasını
+ezer ve kullanıcıyı tamamen dışarı atardı.
+
+**Paket içinde, `scripts/` içinde değil**: `uvx enabiz-mcp` ile kuran kullanıcının repo
+checkout'u yoktur.
+
+Bu bir atlatma değildir (invaryant #4): reCAPTCHA ve SMS OTP yine portalın kendi
+sayfasında, kullanıcının tarayıcısında çözülür; içe aktarılan şey o girişin sonucudur.
 
 ## Açık sorular
 

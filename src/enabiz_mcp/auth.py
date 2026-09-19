@@ -185,6 +185,22 @@ def has_auth_cookie(cookies: httpx.Cookies) -> bool:
     return any(hint in names for hint in AUTH_COOKIE_HINTS)
 
 
+def cookies_alive(cfg: Config, cookies: httpx.Cookies) -> bool:
+    """VERİLEN cookie'lerle sunucuda gerçekten girişli miyiz — canlı bir GET ile.
+
+    `session_alive`'dan ayrı durur çünkü çağıranlardan biri (oturum içe aktarma)
+    cookie'leri HENÜZ kaydetmemiştir: geçersiz bir yapıştırmanın çalışan bir oturum
+    dosyasının üstüne yazmasını önlemek için önce doğrulanır, sonra kaydedilir.
+    """
+    if not has_auth_cookie(cookies):
+        return False
+    try:
+        with build_client(cfg, cookies=cookies) as client:
+            return 'name="TCKimlikNo"' not in client.get(HOME_PATH).text
+    except Exception:  # noqa: BLE001 — ağ/oturum hatası = canlı değil
+        return False
+
+
 def session_alive(cfg: Config) -> bool:
     """Kayıtlı oturumun sunucuda HÂLÂ geçerli olduğunu canlı bir GET ile doğrular.
 
@@ -193,13 +209,9 @@ def session_alive(cfg: Config) -> bool:
     yönlendik mi diye bakmaktır — hiçbir yerel `Expires` değeri bunu bilemez.
     """
     cookies = load_session(cfg)
-    if not cookies or not has_auth_cookie(cookies):
+    if cookies is None:
         return False
-    try:
-        with session_scope(cfg) as client:
-            return 'name="TCKimlikNo"' not in client.get(HOME_PATH).text
-    except Exception:  # noqa: BLE001 — ağ/oturum hatası = canlı değil
-        return False
+    return cookies_alive(cfg, cookies)
 
 
 class AuthRequired(RuntimeError):
@@ -298,7 +310,9 @@ def login_start(cfg: Config) -> dict:
             "gösterdiği mesajı okuyun: şifre süresi dolmuş, hesap kilitli, onay bekleyen "
             "bir sözleşme/KVKK adımı veya telefon doğrulaması gibi durumların hepsi bu "
             "koda düşebilir. Girişi arka arkaya DENEMEYİN — başarısız denemeler hesabı "
-            "kilitleyebilir."
+            "kilitleyebilir. Tarayıcıdan giriş çalışıyorsa yedek yol hazır: kullanıcı "
+            "kendi terminalinde `uvx --from enabiz-mcp enabiz-import-session` "
+            "çalıştırıp oturumu aktarabilir (cookie sohbete YAZILMAZ)."
         )
     return info
 

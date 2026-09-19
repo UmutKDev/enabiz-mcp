@@ -1,6 +1,6 @@
 # Proje Durumu
 
-Son güncelleme: 2026-07-15
+Son güncelleme: 2026-09-19
 
 ## Nerede
 
@@ -11,7 +11,8 @@ Tüm alanlar canlı portala karşı doğrulandı — MHRS okuma tool'ları dahil
 
 | Alan | Durum |
 |---|---|
-| Kimlik doğrulama (XSRF + SMS OTP, oturum kalıcılığı) | 🟢 canlı doğrulandı |
+| Kimlik doğrulama (XSRF + SMS OTP, oturum kalıcılığı) | 🟡 otomatik giriş tıkalı — `GetSmsOnayKontrol` tanınmayan `77` döndürüyor (anlamı açık) |
+| Yedek giriş: tarayıcı oturumu içe aktarma (`enabiz-import-session`) | 🟢 uygulandı — sır `getpass` ile, doğrulanmadan kaydedilmez |
 | Endpoint keşfi (14 sayfa · 124 uç · 21 okuma) | 🟢 tamam — `findings/discovery-report.md` |
 | Klinik: tahlil, tanı, alerji, aşı, kronik takip, epikriz, patoloji | 🟢 canlı |
 | Reçete/ilaç: reçete + detay, optik, cihaz, ilaç, prospektüs, kullanım geçmişi | 🟢 canlı |

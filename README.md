@@ -201,6 +201,33 @@ yolları elle yazın:
 olarak saklanır ve süresi (~30–60 dk) dolana dek yeniden kullanılır. Oturum düşerse veri
 tool'ları `error: "auth_required"` döner; yeniden giriş yapın.
 
+### Yedek yol: tarayıcı oturumunu içe aktarma
+
+Otomatik giriş her zaman ilerleyemez: portal `GetSmsOnayKontrol`'e bu istemcinin
+tanımadığı bir akış kodu döndürebilir (canlıda görülen `77` — anlamı hâlâ bilinmiyor,
+bkz. [`docs/findings/auth-flow.md`](docs/findings/auth-flow.md)) ya da adım reCAPTCHA'ya
+takılabilir. O durumda **tarayıcıda normal giriş yapıp oturumu aktarabilirsiniz**:
+
+```bash
+uvx --from enabiz-mcp enabiz-import-session
+```
+
+Komut size tarayıcıdaki `.EnabizSESSIONID` cookie'sini sorar (DevTools → Application →
+Cookies), oturumun portalda gerçekten geçerli olduğunu **doğrular**, sonra `chmod 600`
+ile kaydeder. Sunucuyu yeniden başlatmanız gerekmez.
+
+Bu bir atlatma **değildir** (invaryant #4): reCAPTCHA ve SMS OTP yine portalın kendi
+sayfasında, sizin tarayıcınızda çözülür; buraya gelen şey o girişin sonucudur.
+
+> **Cookie'yi sohbete yazmayın.** Değer `getpass` ile gizli olarak alınır: ekrana
+> basılmaz, komut satırına ve kabuk geçmişine düşmez, LLM bağlamına hiç girmez. Aynı
+> sebeple bilerek ne bir MCP tool argümanı ne de bir ortam değişkeni sunulur — o cookie
+> sizin oturumunuzdur, parolanız kadar hassastır.
+
+Oturum sunucu tarafında kısa ömürlüdür ve yenilenemez; süresi dolunca komutu tekrar
+çalıştırın. Docker ile çalıştırıyorsanız komutu konteyner içinde (ya da aynı
+`ENABIZ_SESSION_PATH`'e yazacak şekilde) koşturun — yol çıktıda basılır.
+
 ## Tool'lar (47)
 
 **Oturum:** `enabiz_login_start` · `enabiz_login_verify` · `enabiz_session_status`

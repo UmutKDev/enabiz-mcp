@@ -54,7 +54,9 @@ def enabiz_session_status() -> dict:
     """Mevcut E-Nabız oturum ve yapılandırma durumunu döndürür.
 
     `authenticated`, oturumun sunucuda GERÇEKTEN geçerli olduğunu tek bir hafif
-    istekle doğrular. `false` ise `enabiz_login_start` → `enabiz_login_verify`.
+    istekle doğrular. `false` ise `enabiz_login_start` → `enabiz_login_verify`;
+    o yol tanınmayan bir akış koduyla tıkanıyorsa yedek olarak kullanıcı kendi
+    terminalinde `uvx --from enabiz-mcp enabiz-import-session` çalıştırabilir.
     """
     cfg = Config.from_env()
     return {

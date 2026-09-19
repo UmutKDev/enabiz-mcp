@@ -35,6 +35,12 @@ HOME_PATH = "/Home/Index"  # kimlikli olduğunu doğrulamak için
 # GetSmsOnayKontrol yanıt kodları (login sayfası JS'inden).
 CHECK_2FA_REQUIRED = "22"  # kimlik doğru → iki-aşamalı SMS onayına geç
 CHECK_ERROR = "87"         # işlem sırasında hata
+#
+# ⚠️ Bu liste TAM DEĞİL. 2026-08-31'de canlıda `77` görüldü (HTTP 200,
+# `application/json`, gövde `"77"`); anlamı BİLİNMİYOR ve buraya bir tahminle
+# EKLENMEZ — sessiz yanlış-eşleme boş sonuçtan kötüdür (CLAUDE.md #2). Tanınmayan
+# kod `step="unknown"` + `hint` ile modele/kullanıcıya olduğu gibi taşınır.
+# Bkz. docs/findings/auth-flow.md "Bilinmeyen yanıt kodları".
 
 # GetSmsOnayGirisYap yanıt kodları.
 LOGIN_OK = "1"          # giriş başarılı
@@ -272,6 +278,7 @@ def login_start(cfg: Config) -> dict:
 
     body = (r.text or "").strip()
     info = _describe(r)
+    info["code"] = body  # portalın ham akış kodu — model buna göre dallanabilir
     if body == CHECK_2FA_REQUIRED:
         info["step"] = "sms_required"
         info["message"] = "Kimlik doğrulandı. Telefonunuza gelen SMS kodunu login_verify ile girin."
@@ -279,8 +286,20 @@ def login_start(cfg: Config) -> dict:
         info["step"] = "error"
         info["message"] = "İşlem sırasında hata (87). Kimlik bilgilerini kontrol edin."
     else:
+        # Kodun anlamını UYDURMA. Kesin bilinen tek şey: `22` değil, yani portal SMS
+        # adımına geçmedi ve giriş bu çağrıyla ilerlemedi. "SMS gitti mi" bilinmiyor.
         info["step"] = "unknown"
-        info["message"] = f"Beklenmeyen yanıt: {body!r} (bkz. auth-flow.md)."
+        info["message"] = (
+            f"Portal bu sürümün tanımadığı bir akış kodu döndü: {body!r}. Giriş ilerlemedi."
+        )
+        info["hint"] = (
+            "SMS gönderilip gönderilmediği BİLİNMİYOR — enabiz_login_verify ÇAĞIRMAYIN. "
+            "Aynı kimlik bilgileriyle tarayıcıdan enabiz.gov.tr'ye girin ve portalın "
+            "gösterdiği mesajı okuyun: şifre süresi dolmuş, hesap kilitli, onay bekleyen "
+            "bir sözleşme/KVKK adımı veya telefon doğrulaması gibi durumların hepsi bu "
+            "koda düşebilir. Girişi arka arkaya DENEMEYİN — başarısız denemeler hesabı "
+            "kilitleyebilir."
+        )
     return info
 
 

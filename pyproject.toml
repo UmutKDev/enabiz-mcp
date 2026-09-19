@@ -35,6 +35,9 @@ Issues = "https://github.com/UmutKDev/e-nabiz-mcp/issues"
 
 [project.scripts]
 enabiz-mcp = "enabiz_mcp.server:main"
+# Girişin yedek yolu (reCAPTCHA/tanınmayan akış kodu). Paket içinde durur, `scripts/`
+# içinde DEĞİL: `uvx enabiz-mcp` ile kuran kullanıcının repo checkout'u yoktur.
+enabiz-import-session = "enabiz_mcp.import_session:main"
 
 [build-system]
 requires = ["uv_build>=0.11.8,<0.12.0"]

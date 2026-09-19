@@ -94,7 +94,13 @@ def auth_guarded(fn: Callable[..., dict]) -> Callable[..., dict]:
             return {
                 "error": "auth_required",
                 "message": str(exc),
-                "hint": "enabiz_login_start → enabiz_login_verify ile yeniden giriş yapın.",
+                "hint": (
+                    "enabiz_login_start → enabiz_login_verify ile yeniden giriş yapın. "
+                    "Giriş tanınmayan bir akış koduyla ilerlemiyorsa yedek yol: "
+                    "kullanıcı tarayıcıdan normal giriş yapıp kendi terminalinde "
+                    "`uvx --from enabiz-mcp enabiz-import-session` çalıştırır. "
+                    "Cookie'yi SOHBETE YAZDIRMAYIN — komut onu gizli istemle alır."
+                ),
             }
         except MhrsRateLimited as exc:
             return {
